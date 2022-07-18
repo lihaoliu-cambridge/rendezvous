@@ -341,7 +341,7 @@ target_weight   = [0.49752894, 0.52041527, 0.49752894, 0.51394739, 2.71899565, 1
 
 
 #%% model
-model = network.Rendezvous('resnet18', hr_output=hr_output, use_ln=use_ln).cuda()
+model = network.Rendezvous('resnet50', hr_output=hr_output, use_ln=use_ln).cuda()
 pytorch_total_params = sum(p.numel() for p in model.parameters())
 pytorch_train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -414,7 +414,10 @@ print("Model's weight loaded ...")
 #%% log config
 header1 = "** Run: {} | Framework: PyTorch | Method: {} | Version: {} | Data: CholecT50 | Batch: {} **".format(os.path.basename(__file__), modelname, version, batch_size)
 header2 = "** Time: {} | Start: {}-epoch  {}-steps | Init CKPT: {} | Save CKPT: {} **".format(time.ctime(), 0, 0, resume_ckpt, ckpt_path)
-header3 = "** LR Config: Init: {} | Peak: {} | Warmup Epoch: {} | Rise: {} | Decay {} | train params {} | all params {} **".format([float(f'{sch.get_last_lr()[0]:.6f}') for sch in lr_schedulers], [float(f'{v:.6f}') for v in wp_lr], warmups, power, decay_rate, pytorch_train_params, pytorch_total_params)
+header3 = "** LR Config: Init: {} | Peak: {} | Warmup Epoch: {} | Rise: {} | Decay {} | train params {} | all params {} **".format(
+    [float(f"{op.state_dict()['param_groups'][0]['lr']:.6f}") for op in optimizers], [float(f'{v:.6f}') for v in wp_lr],
+    warmups, power,
+    decay_rate, pytorch_train_params, pytorch_total_params)
 maxlen  = max(len(header1), len(header2), len(header3))
 header1 = "{}{}{}".format('*'*((maxlen-len(header1))//2+1), header1, '*'*((maxlen-len(header1))//2+1) )
 header2 = "{}{}{}".format('*'*((maxlen-len(header2))//2+1), header2, '*'*((maxlen-len(header2))//2+1) )
@@ -428,7 +431,7 @@ if is_train:
     for epoch in range(0,epochs):
         try:
             # Train
-            print("Traning | lr: {} | epoch {}".format([lr.get_last_lr() for lr in lr_schedulers], epoch), end=" | ", file=open(logfile, 'a+'))  
+            # print("Traning | lr: {} | epoch {}".format([lr.get_last_lr() for lr in lr_schedulers], epoch), end=" | ", file=open(logfile, 'a+'))  
             train_loop(train_dataloader, model, activation, loss_fn_i, loss_fn_v, loss_fn_t, loss_fn_ivt, optimizers, lr_schedulers, epoch)
 
             # val
